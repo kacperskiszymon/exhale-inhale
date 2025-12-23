@@ -1,4 +1,8 @@
 let totalSeconds = 0;
+
+let timerInterval;
+let phaseInterval;
+
 let isRunning = false;
 let isMuted = false;
 
@@ -15,6 +19,22 @@ const phases = [
   { text: "ZATRZYMAJ", seconds: 2 }
 ];
 
+/* =========================
+   IN-APP BROWSER DETECTION
+   ========================= */
+function isInAppBrowser() {
+  const ua = navigator.userAgent || "";
+  return (
+    ua.includes("FBAN") ||
+    ua.includes("FBAV") ||
+    ua.includes("Instagram") ||
+    ua.includes("Messenger")
+  );
+}
+
+/* =========================
+   UI
+   ========================= */
 function setDuration(minutes, button) {
   totalSeconds = minutes * 60;
   document.getElementById("startBtn").disabled = false;
@@ -25,16 +45,12 @@ function setDuration(minutes, button) {
   button.classList.add("active");
 }
 
-/* ===== AUDIO UNLOCK (MOBILE) ===== */
-function unlockAudio() {
-  const msg = new SpeechSynthesisUtterance(" ");
-  msg.lang = "pl-PL";
-  window.speechSynthesis.speak(msg);
-}
-
-/* ===== SPEAK ===== */
+/* =========================
+   AUDIO
+   ========================= */
 function speak(text) {
   if (isMuted) return;
+  if (!("speechSynthesis" in window)) return;
 
   const msg = new SpeechSynthesisUtterance(text);
   msg.lang = "pl-PL";
@@ -48,9 +64,19 @@ function toggleMute() {
     isMuted ? "🔇 Głos: OFF" : "🔊 Głos: ON";
 }
 
-/* ===== START ===== */
+/* =========================
+   START
+   ========================= */
 function startBreathing() {
-  unlockAudio(); // 🔓 kluczowe na mobile
+  // ⚠️ Messenger / Instagram / FB
+  if (isInAppBrowser()) {
+    alert(
+      "To ćwiczenie działa najlepiej w przeglądarce.\n\n" +
+      "Kliknij ⋮ lub ••• i wybierz:\n" +
+      "„Otwórz w przeglądarce”."
+    );
+    return;
+  }
 
   isRunning = true;
 
@@ -60,25 +86,27 @@ function startBreathing() {
 
   ring = document.getElementById("ring");
   ring.style.strokeDasharray = RING_LENGTH;
+
+  // zawsze start od pustego
+  ring.style.transition = "none";
   ring.style.strokeDashoffset = RING_LENGTH;
+  ring.getBoundingClientRect();
 
   currentPhaseIndex = 0;
   phaseTimeLeft = phases[0].seconds;
 
   applyPhase();
-  tick(); // 🔁 start pętli czasu
-}
 
-/* ===== TIME LOOP (MOBILE SAFE) ===== */
-function tick() {
-  if (!isRunning) return;
+  timerInterval = setInterval(() => {
+    if (!isRunning) return;
+    totalSeconds--;
+    if (totalSeconds <= 0) finish();
+  }, 1000);
 
-  setTimeout(() => {
+  phaseInterval = setInterval(() => {
     if (!isRunning) return;
 
-    totalSeconds--;
     phaseTimeLeft--;
-
     document.getElementById("counter").innerText = phaseTimeLeft;
 
     if (phaseTimeLeft <= 0) {
@@ -86,17 +114,12 @@ function tick() {
       phaseTimeLeft = phases[currentPhaseIndex].seconds;
       applyPhase();
     }
-
-    if (totalSeconds <= 0) {
-      finish();
-      return;
-    }
-
-    tick(); // 🔁 rekurencja zamiast setInterval
   }, 1000);
 }
 
-/* ===== PHASE LOGIC ===== */
+/* =========================
+   PHASE LOGIC
+   ========================= */
 function applyPhase() {
   const phase = phases[currentPhaseIndex];
 
@@ -110,22 +133,27 @@ function applyPhase() {
   if (phase.text === "WDECH") {
     ring.style.strokeDashoffset = RING_LENGTH;
     ring.getBoundingClientRect();
+
     ring.style.transition = `stroke-dashoffset ${phase.seconds}s linear`;
     ring.style.strokeDashoffset = 0;
   }
-
   else if (phase.text === "WYDECH") {
     ring.style.strokeDashoffset = 0;
     ring.getBoundingClientRect();
+
     ring.style.transition = `stroke-dashoffset ${phase.seconds}s linear`;
     ring.style.strokeDashoffset = RING_LENGTH;
   }
+  // ZATRZYMAJ → brak animacji, zostaje jak jest
 }
 
-/* ===== CONTROLS ===== */
+/* =========================
+   CONTROLS
+   ========================= */
 function stopBreathing() {
   isRunning = false;
-  speak("Ćwiczenie przerwane");
+  clearInterval(timerInterval);
+  clearInterval(phaseInterval);
 }
 
 function resetBreathing() {
@@ -133,7 +161,8 @@ function resetBreathing() {
 }
 
 function finish() {
-  isRunning = false;
+  clearInterval(timerInterval);
+  clearInterval(phaseInterval);
   document.getElementById("breathing").classList.add("hidden");
   document.getElementById("done").classList.remove("hidden");
   speak("Gotowe. Dobra robota.");
