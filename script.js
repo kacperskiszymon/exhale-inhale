@@ -1,8 +1,4 @@
 let totalSeconds = 0;
-
-let timerInterval;
-let phaseInterval;
-
 let isRunning = false;
 let isMuted = false;
 
@@ -29,6 +25,14 @@ function setDuration(minutes, button) {
   button.classList.add("active");
 }
 
+/* ===== AUDIO UNLOCK (MOBILE) ===== */
+function unlockAudio() {
+  const msg = new SpeechSynthesisUtterance(" ");
+  msg.lang = "pl-PL";
+  window.speechSynthesis.speak(msg);
+}
+
+/* ===== SPEAK ===== */
 function speak(text) {
   if (isMuted) return;
 
@@ -44,7 +48,10 @@ function toggleMute() {
     isMuted ? "🔇 Głos: OFF" : "🔊 Głos: ON";
 }
 
+/* ===== START ===== */
 function startBreathing() {
+  unlockAudio(); // 🔓 kluczowe na mobile
+
   isRunning = true;
 
   document.getElementById("timeSelection").classList.add("hidden");
@@ -53,27 +60,25 @@ function startBreathing() {
 
   ring = document.getElementById("ring");
   ring.style.strokeDasharray = RING_LENGTH;
-
-  // ZAWSZE zaczynamy od pustego
-  ring.style.transition = "none";
   ring.style.strokeDashoffset = RING_LENGTH;
-  ring.getBoundingClientRect();
 
   currentPhaseIndex = 0;
   phaseTimeLeft = phases[0].seconds;
 
   applyPhase();
+  tick(); // 🔁 start pętli czasu
+}
 
-  timerInterval = setInterval(() => {
+/* ===== TIME LOOP (MOBILE SAFE) ===== */
+function tick() {
+  if (!isRunning) return;
+
+  setTimeout(() => {
     if (!isRunning) return;
+
     totalSeconds--;
-    if (totalSeconds <= 0) finish();
-  }, 1000);
-
-  phaseInterval = setInterval(() => {
-    if (!isRunning) return;
-
     phaseTimeLeft--;
+
     document.getElementById("counter").innerText = phaseTimeLeft;
 
     if (phaseTimeLeft <= 0) {
@@ -81,9 +86,17 @@ function startBreathing() {
       phaseTimeLeft = phases[currentPhaseIndex].seconds;
       applyPhase();
     }
+
+    if (totalSeconds <= 0) {
+      finish();
+      return;
+    }
+
+    tick(); // 🔁 rekurencja zamiast setInterval
   }, 1000);
 }
 
+/* ===== PHASE LOGIC ===== */
 function applyPhase() {
   const phase = phases[currentPhaseIndex];
 
@@ -92,37 +105,26 @@ function applyPhase() {
 
   speak(phase.text);
 
-  // STOP animacji
   ring.style.transition = "none";
 
   if (phase.text === "WDECH") {
-    // start: pusty → animuj do pełnego
     ring.style.strokeDashoffset = RING_LENGTH;
     ring.getBoundingClientRect();
-
     ring.style.transition = `stroke-dashoffset ${phase.seconds}s linear`;
     ring.style.strokeDashoffset = 0;
   }
 
   else if (phase.text === "WYDECH") {
-    // start: pełny → animuj do pustego
     ring.style.strokeDashoffset = 0;
     ring.getBoundingClientRect();
-
     ring.style.transition = `stroke-dashoffset ${phase.seconds}s linear`;
     ring.style.strokeDashoffset = RING_LENGTH;
   }
-
-  else {
-    // ZATRZYMAJ – brak animacji, zostaje w aktualnej pozycji
-    ring.style.transition = "none";
-  }
 }
 
+/* ===== CONTROLS ===== */
 function stopBreathing() {
   isRunning = false;
-  clearInterval(timerInterval);
-  clearInterval(phaseInterval);
   speak("Ćwiczenie przerwane");
 }
 
@@ -131,8 +133,7 @@ function resetBreathing() {
 }
 
 function finish() {
-  clearInterval(timerInterval);
-  clearInterval(phaseInterval);
+  isRunning = false;
   document.getElementById("breathing").classList.add("hidden");
   document.getElementById("done").classList.remove("hidden");
   speak("Gotowe. Dobra robota.");
