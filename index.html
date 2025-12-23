@@ -10,31 +10,62 @@
 
   <div class="app">
     <h1>Exhale / Inhale</h1>
+
     <p class="intro">
       Usiądź prosto na brzegu łóżka lub przy biurku.<br>
       Zrób to przed pierwszym łykiem kawy.
     </p>
 
     <div class="buttons" id="timeSelection">
-      <button onclick="setDuration(5)">5 minut</button>
-      <button onclick="setDuration(7)">7 minut</button>
-      <button onclick="setDuration(10)">10 minut</button>
+      <button class="time-btn" onclick="setDuration(5, this)">5 minut</button>
+      <button class="time-btn" onclick="setDuration(7, this)">7 minut</button>
+      <button class="time-btn" onclick="setDuration(10, this)">10 minut</button>
     </div>
 
     <button id="startBtn" onclick="startBreathing()" disabled>START</button>
 
     <div class="breathing hidden" id="breathing">
+
+      <!-- RING -->
+      <svg class="ring" width="180" height="180" viewBox="0 0 180 180">
+        <circle
+          class="ring-bg"
+          cx="90"
+          cy="90"
+          r="80"
+        />
+        <circle
+          class="ring-progress"
+          cx="90"
+          cy="90"
+          r="80"
+          id="ring"
+        />
+      </svg>
+
       <div id="phase">WDECH</div>
       <div id="counter">4</div>
-      <div id="timeLeft"></div>
+
+      <div class="controls">
+        <button onclick="toggleMute()" id="muteBtn">🔊 Głos: ON</button>
+        <button onclick="stopBreathing()">STOP</button>
+        <button onclick="resetBreathing()">OD NOWA</button>
+      </div>
     </div>
 
     <div class="done hidden" id="done">
       <h2>Gotowe.</h2>
-      <p>Układ nerwowy uspokojony.<br>Teraz możesz iść po kawę.</p>
+      <p>
+        Układ nerwowy uspokojony.<br>
+        Teraz możesz iść po kawę.
+      </p>
       <button onclick="location.reload()">Zacznij od nowa</button>
     </div>
   </div>
+
+  <footer class="footer-fixed">
+    Darmowa aplikacja oddechowa • stworzona przez <strong>BiznesBot.pl</strong> © 2025
+  </footer>
 
   <script src="script.js"></script>
 </body>
