@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <title>Exhale / Inhale</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="app">
+    <h1>Exhale / Inhale</h1>
+    <p class="intro">
+      Usiądź prosto na brzegu łóżka lub przy biurku.<br>
+      Zrób to przed pierwszym łykiem kawy.
+    </p>
+
+    <div class="buttons" id="timeSelection">
+      <button onclick="setDuration(5)">5 minut</button>
+      <button onclick="setDuration(7)">7 minut</button>
+      <button onclick="setDuration(10)">10 minut</button>
+    </div>
+
+    <button id="startBtn" onclick="startBreathing()" disabled>START</button>
+
+    <div class="breathing hidden" id="breathing">
+      <div id="phase">WDECH</div>
+      <div id="counter">4</div>
+      <div id="timeLeft"></div>
+    </div>
+
+    <div class="done hidden" id="done">
+      <h2>Gotowe.</h2>
+      <p>Układ nerwowy uspokojony.<br>Teraz możesz iść po kawę.</p>
+      <button onclick="location.reload()">Zacznij od nowa</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
